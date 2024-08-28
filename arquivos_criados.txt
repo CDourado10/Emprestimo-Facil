@@ -1,0 +1,56 @@
+Emprestimo-Facil/
+│
+├── app/
+│   ├── api/
+│   │   ├── __init__.py
+│   │   ├── auth.py
+│   │   ├── clientes.py
+│   │   ├── deps.py
+│   │   ├── emprestimos.py
+│   │   └── usuarios.py
+│   │
+│   ├── core/
+│   │   ├── __init__.py
+│   │   ├── config.py
+│   │   └── security.py
+│   │
+│   ├── db/
+│   │   ├── __init__.py
+│   │   └── database.py
+│   │
+│   ├── models/
+│   │   ├── __init__.py
+│   │   ├── usuario.py
+│   │   ├── cliente.py
+│   │   └── emprestimo.py
+│   │
+│   ├── schemas/
+│   │   ├── __init__.py
+│   │   ├── usuario.py
+│   │   ├── cliente.py
+│   │   ├── emprestimo.py
+│   │   └── token.py
+│   │
+│   └── services/
+│       ├── __init__.py
+│       ├── usuario_service.py
+│       ├── cliente_service.py
+│       └── emprestimo_service.py
+│
+├── tests/
+│   ├── __init__.py
+│   ├── conftest.py
+│   ├── test_auth.py
+│   ├── test_clientes.py
+│   └── test_emprestimos.py
+│
+├── alembic/
+│   ├── versions/
+│   └── env.py
+│
+├── .gitignore
+├── README.md
+├── requirements.txt
+├── main.py
+└── alembic.ini
+└── .env

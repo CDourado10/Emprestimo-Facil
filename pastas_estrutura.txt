@@ -1,0 +1,19 @@
+Emprestimo-Facil/
+│
+├── venv/                 (seu ambiente virtual)
+│
+├── app/                  (seu código-fonte)
+│   ├── api/
+│   ├── core/
+│   ├── db/
+│   ├── models/
+│   ├── schemas/
+│   └── services/
+│
+├── tests/
+├── alembic/
+├── .gitignore
+├── README.md
+├── requirements.txt
+├── main.py
+└── alembic.ini
