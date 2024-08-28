@@ -2,6 +2,10 @@
 
 from celery import Celery
 from app.core.config import settings
+from app.services.notification_service import NotificationFactory
+import logging
+
+logger = logging.getLogger(__name__)
 
 celery_app = Celery(
     "emprestimo_facil",
@@ -28,3 +32,18 @@ def exemplo_tarefa_assincrona(param1, param2):
 # Para usar:
 # from app.core.celery_app import exemplo_tarefa_assincrona
 # resultado = exemplo_tarefa_assincrona.delay(10, 20)
+
+@celery_app.task
+def enviar_notificacao_async(to: str, message: str, notification_type: str):
+    try:
+        notification_factory = NotificationFactory()
+        notification_service = notification_factory.get_notification_service(notification_type)
+        result = notification_service.send_notification(to, message)
+        if result:
+            logger.info(f"Notificação enviada com sucesso para {to}")
+        else:
+            logger.error(f"Falha ao enviar notificação para {to}")
+        return result
+    except Exception as e:
+        logger.error(f"Erro ao enviar notificação: {str(e)}")
+        return False

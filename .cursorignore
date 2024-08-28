@@ -1,0 +1,29 @@
+# Ambiente virtual
+venv/
+.env
+
+# Arquivos e diretórios do sistema
+__pycache__/
+*.py[cod]
+*.swp
+.DS_Store
+
+# Logs
+*.log
+
+# Arquivos de configuração do IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Arquivos temporários
+*.tmp
+*.bak
+*.backup
+
+# Arquivos de pacotes
+*.egg
+*.egg-info/
+dist/
+build/

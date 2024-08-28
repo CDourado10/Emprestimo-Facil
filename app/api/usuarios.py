@@ -3,8 +3,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List
-import logging
-
+from app.core.logger import get_logger
 from app.db.database import get_db
 from app.schemas.usuario import UsuarioOut, UsuarioUpdate
 from app.services import usuario_service
@@ -12,7 +11,7 @@ from app.api.deps import get_current_user
 from app.core.security import rate_limited
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 @router.get("/", response_model=List[UsuarioOut])
 def listar_usuarios(

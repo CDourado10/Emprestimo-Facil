@@ -49,7 +49,6 @@ class Settings(BaseConfig):
     project_name: str = "Empréstimo Fácil"
     api_v1_str: str = "/api/v1"
     
-    
     # Segurança
     secret_key: str
     algorithm: str
@@ -99,6 +98,13 @@ class Settings(BaseConfig):
 
     # URL do Redis específica para cache (opcional)
     redis_cache_url: Optional[str] = None
+
+    # Celery
+    CELERY_BROKER_URL: str = "redis://localhost:6379/0"
+    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
+
+    # Alembic
+    alembic_config: str = "alembic.ini"
 
     class Config:
         env_file = ".env"
@@ -202,3 +208,10 @@ def setup_logging(settings: Settings):
 
 settings = get_settings()
 setup_logging(settings)
+
+log_directory: str = "logs"
+module_log_levels: Dict[str, str] = {
+    "app.api": "INFO",
+    "app.services": "DEBUG",
+    "app.models": "WARNING"
+}

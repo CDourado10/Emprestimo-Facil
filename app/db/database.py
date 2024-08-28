@@ -6,22 +6,11 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import QueuePool
 from contextlib import contextmanager
 from app.core.config import settings
-import logging
+from app.core.logger import get_logger
 import traceback
 
-logger = logging.getLogger(__name__)
-'''
-# Configuração do engine com pool de conexões
-engine = create_engine(
-    settings.DATABASE_URL,
-    poolclass=QueuePool,
-    pool_size=5,
-    max_overflow=10,
-    pool_timeout=30,
-    pool_recycle=1800,
-    connect_args={"check_same_thread": False} if settings.DATABASE_URL.startswith("sqlite") else {}
-)
-'''
+logger = get_logger(__name__)
+
 db_settings = settings.get_database_settings()
 engine = create_engine(db_settings["url"], echo=db_settings["echo"])
 
@@ -47,6 +36,9 @@ def init_db():
     try:
         Base.metadata.create_all(bind=engine)
         logger.info("Database tables created successfully")
+        run_migrations()
     except Exception as e:
         logger.error(f"Error initializing database: {str(e)}")
         raise
+
+from app.db.migrations import run_migrations

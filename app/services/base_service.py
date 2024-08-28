@@ -3,7 +3,9 @@
 from typing import List, TypeVar, Generic
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, Query
-import logging
+from app.core.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 T = TypeVar('T')
@@ -11,7 +13,7 @@ T = TypeVar('T')
 class BaseService(Generic[T]):
     def __init__(self, db: Session):
         self.db = db
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = logger(self.__class__.__name__)
 
     def handle_not_found(self, message: str):
         self.logger.warning(message)

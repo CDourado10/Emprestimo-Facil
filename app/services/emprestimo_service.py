@@ -10,9 +10,13 @@ from app.core.config import settings
 from app.services.notification_service import NotificationFactory
 from app.services.calculo_juros import CalculoJuros, TipoJuros, TipoMora, RegraFixa, RegraRecorrente
 from decimal import Decimal
-import logging
+from app.services.cache import cache, cache_decorator
+from app.core.celery_app import enviar_notificacao_async
+from app.core.logger import get_logger
+from app.services.garantia_service import GarantiaService
+from app.schemas.garantia import GarantiaCreate
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class EmprestimoService(BaseService):
     def __init__(self, db: Session):
@@ -35,8 +39,9 @@ class EmprestimoService(BaseService):
             logger.error(f"Erro ao criar empréstimo: {str(e)}")
             self.handle_exception(e, 400)
 
-    def obter_emprestimo(self, emprestimo_id: int):
-        emprestimo = self.db.query(Emprestimo).filter(Emprestimo.id == emprestimo_id).first()
+    @cache_decorator(expire_time=3600)
+    async def obter_emprestimo(self, emprestimo_id: int):
+        emprestimo = await self.db.query(Emprestimo).filter(Emprestimo.id == emprestimo_id).first()
         if not emprestimo:
             self.handle_not_found(f"Empréstimo com id {emprestimo_id} não encontrado")
         return emprestimo
@@ -50,35 +55,40 @@ class EmprestimoService(BaseService):
                 query = query.filter(Emprestimo.cliente_id == filtros['cliente_id'])
         return self.paginate(query, page, per_page)
 
-    def atualizar_emprestimo(self, emprestimo_id: int, emprestimo_update: EmprestimoUpdate):
-        db_emprestimo = self.obter_emprestimo(emprestimo_id)
+    async def atualizar_emprestimo(self, emprestimo_id: int, emprestimo_update: EmprestimoUpdate):
+        db_emprestimo = await self.obter_emprestimo(emprestimo_id)
         for key, value in emprestimo_update.model_dump(exclude_unset=True).items():
             setattr(db_emprestimo, key, value)
         db_emprestimo.atualizado_em = datetime.utcnow()
         self.db.commit()
         self.db.refresh(db_emprestimo)
         self._notificar_cliente(db_emprestimo, "atualizacao")
+        await cache.delete(f"emprestimo:{emprestimo_id}")
+        await cache.delete("lista_emprestimos")
         return db_emprestimo
 
-    def deletar_emprestimo(self, emprestimo_id: int):
-        db_emprestimo = self.obter_emprestimo(emprestimo_id)
+    async def deletar_emprestimo(self, emprestimo_id: int):
+        db_emprestimo = await self.obter_emprestimo(emprestimo_id)
         db_emprestimo.status = StatusEmprestimo.CANCELADO
         db_emprestimo.atualizado_em = datetime.utcnow()
         self.db.commit()
         self._notificar_cliente(db_emprestimo, "cancelamento")
+        await cache.delete(f"emprestimo:{emprestimo_id}")
+        await cache.delete("lista_emprestimos")
         return db_emprestimo
 
     def registrar_pagamento(self, emprestimo_id: int, pagamento: PagamentoCreate):
         emprestimo = self.obter_emprestimo(emprestimo_id)
         valor_devido = self.calcular_valor_total_devido(emprestimo)
-        
+
         if pagamento.valor > valor_devido:
             raise ValueError("O valor do pagamento excede o valor devido")
 
         novo_pagamento = Pagamento(
             emprestimo_id=emprestimo.id,
             valor=pagamento.valor,
-            data_pagamento=datetime.utcnow()
+            data_pagamento=datetime.utcnow(),
+            metodo_pagamento=pagamento.metodo_pagamento
         )
         self.db.add(novo_pagamento)
 
@@ -165,15 +175,7 @@ class EmprestimoService(BaseService):
 
         mensagem = self._criar_mensagem_notificacao(emprestimo, tipo_notificacao)
         
-        canais = ["email", "sms", "whatsapp"]
-        for canal in canais:
-            service = self.notification_factory.get_notification_service(canal)
-            if canal == "email" and service.send_notification(cliente.email, mensagem):
-                return
-            elif service.send_notification(cliente.telefone, mensagem):
-                return
-
-        logger.warning(f"Falha ao enviar notificação para o cliente {cliente.id} do empréstimo {emprestimo.id}")
+        enviar_notificacao_async.delay(cliente.email, mensagem, "email")
 
     def _criar_mensagem_notificacao(self, emprestimo: Emprestimo, tipo_notificacao: str) -> str:
         if tipo_notificacao == "criacao":
@@ -223,3 +225,23 @@ class EmprestimoService(BaseService):
             "status": emprestimo.status.value,
             "proximo_vencimento": emprestimo.proximo_vencimento
         }
+
+    def adicionar_garantia(self, emprestimo_id: int, garantia: GarantiaCreate):
+        emprestimo = self.obter_emprestimo(emprestimo_id)
+        if emprestimo:
+            garantia_service = GarantiaService(self.db)
+            return garantia_service.criar_garantia(garantia, emprestimo_id)
+        return None
+
+    def remover_garantia(self, emprestimo_id: int, garantia_id: int):
+        emprestimo = self.obter_emprestimo(emprestimo_id)
+        if emprestimo:
+            garantia_service = GarantiaService(self.db)
+            return garantia_service.remover_garantia(garantia_id)
+        return False
+
+    def listar_garantias(self, emprestimo_id: int):
+        emprestimo = self.obter_emprestimo(emprestimo_id)
+        if emprestimo:
+            return emprestimo.garantias
+        return []

@@ -3,16 +3,16 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List
-import logging
 from app.db.database import get_db
 from app.schemas.cliente import Cliente, ClienteCreate, ClienteUpdate
 from app.schemas.usuario import Usuario
 from app.services import cliente_service
 from app.api.deps import get_current_user
 from app.core.security import rate_limited
+from app.core.logger import get_logger
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 @router.post("/", response_model=Cliente)
 @rate_limited(max_calls=10, time_frame=60)

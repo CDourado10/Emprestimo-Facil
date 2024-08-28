@@ -74,9 +74,15 @@ def test_deletar_emprestimo(emprestimo_service, emprestimo_fixture):
     assert emprestimo_deletado.status == StatusEmprestimo.CANCELADO
 
 def test_registrar_pagamento(emprestimo_service, emprestimo_fixture):
-    pagamento = PagamentoCreate(valor=Decimal("500.00"))
-    emprestimo_atualizado = emprestimo_service.registrar_pagamento(emprestimo_fixture.id, pagamento)
-    assert emprestimo_atualizado.valor == emprestimo_fixture.valor - Decimal("500.00")
+    pagamento_data = PagamentoCreate(
+        emprestimo_id=emprestimo_fixture.id,
+        valor=100.0,
+        metodo_pagamento="cartão"
+    )
+    emprestimo_atualizado = emprestimo_service.registrar_pagamento(emprestimo_fixture.id, pagamento_data)
+
+    assert emprestimo_atualizado.valor_pago == 100.0
+    assert emprestimo_atualizado.status == StatusEmprestimo.ATIVO  # ou QUITADO, dependendo do valor
 
 def test_calcular_valor_total_devido(emprestimo_service, emprestimo_fixture):
     valor_devido = emprestimo_service.calcular_valor_total_devido(emprestimo_fixture)

@@ -6,11 +6,9 @@ from contextlib import asynccontextmanager
 from app.api import auth, clientes, emprestimos, usuarios
 from app.core.config import settings
 from app.db.database import engine, Base
-import logging
+from app.core.logger import get_logger
 
-# Configuração de logging
-logging.basicConfig(level=settings.LOGGING_LEVEL)
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 # Criação das tabelas do banco de dados
 def create_tables():

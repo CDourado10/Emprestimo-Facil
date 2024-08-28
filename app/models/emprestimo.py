@@ -35,6 +35,7 @@ class Emprestimo(Base, TimestampMixin):
 
     cliente = relationship("Cliente", back_populates="emprestimos")
     pagamentos = relationship("Pagamento", back_populates="emprestimo", cascade="all, delete-orphan")
+    garantias = relationship("Garantia", back_populates="emprestimo", cascade="all, delete-orphan")
 
     __table_args__ = (
         Index('idx_cliente_status', 'cliente_id', 'status'),

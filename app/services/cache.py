@@ -1,12 +1,12 @@
-# app/services/cache.py
+# Emprestimo-Facil\app\services\cache.py
 
 from functools import wraps
 from app.core.config import settings
 import json
 from typing import Any, Callable, Optional
-import logging
+from app.core.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 class Cache:
     def __init__(self):

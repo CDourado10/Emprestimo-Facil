@@ -1,10 +1,11 @@
 #Emprestimo-Facil\app\schemas\emprestimo.py
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from datetime import date, datetime
-from typing import Optional
+from typing import Optional, List
 from app.models.emprestimo import StatusEmprestimo
 from .base import TimestampedModel
+from app.schemas.garantia import Garantia
 
 class EmprestimoBase(BaseModel):
     valor: float = Field(..., gt=0)
@@ -15,11 +16,29 @@ class EmprestimoBase(BaseModel):
 class EmprestimoCreate(EmprestimoBase):
     cliente_id: int
 
+    @field_validator('data_vencimento')
+    def data_vencimento_futura(cls, v):
+        if v <= date.today():
+            raise ValueError('A data de vencimento deve ser no futuro')
+        return v
+
+    @field_validator('taxa_juros')
+    def taxa_juros_valida(cls, v):
+        if v < 0 or v > 100:
+            raise ValueError('A taxa de juros deve estar entre 0 e 100')
+        return v
+
 class EmprestimoUpdate(BaseModel):
     valor: Optional[float] = Field(None, gt=0)
-    taxa_juros: Optional[float] = Field(None, ge=0)
+    taxa_juros: Optional[float] = Field(None, ge=0, le=100)
     data_vencimento: Optional[date] = None
     status: Optional[StatusEmprestimo] = None
+
+    @field_validator('data_vencimento')
+    def data_vencimento_futura(cls, v):
+        if v and v <= date.today():
+            raise ValueError('A data de vencimento deve ser no futuro')
+        return v
 
 class Emprestimo(EmprestimoBase, TimestampedModel):
     id: int
@@ -31,6 +50,7 @@ class Emprestimo(EmprestimoBase, TimestampedModel):
     observacoes: Optional[str] = None
     criado_em: datetime
     atualizado_em: Optional[datetime] = None
+    garantias: List[Garantia] = []
 
     class Config:
         orm_mode = True

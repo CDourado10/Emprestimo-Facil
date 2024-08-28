@@ -4,8 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import timedelta
-import logging
-
+from app.core.logger import get_logger
 from app.core.config import settings
 from app.core.security import create_access_token
 from app.db.database import get_db
@@ -14,7 +13,7 @@ from app.services import usuario_service
 from app.core.security import rate_limited
 
 router = APIRouter()
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 @router.post("/login", response_model=Token)
 @rate_limited(max_calls=5, time_frame=60)
